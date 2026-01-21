@@ -48,8 +48,8 @@ export const login = async (req, res) => {
 
         const token = jwt.sign(
             { userId: user.id, email: user.email },
-            process.env.JWT_SECRET,
-            { expiresIn: process.env.JWT_EXPIRES_IN }
+            process.env.JWT_SECRET || 'default_secret_key_for_testing_only',
+            { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
         )
 
         res.json({ token })
