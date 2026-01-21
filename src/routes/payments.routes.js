@@ -4,11 +4,12 @@ import {
   getPaymentsByWorker,
   getPaymentSummary
 } from '../controllers/payments.controller.js'
+import { protect } from '../middleware/auth.middleware.js'
 
 const router = express.Router()
 
-router.post('/', createPayment)
-router.get('/worker/:workerId', getPaymentsByWorker)
-router.get('/worker/:workerId/summary', getPaymentSummary)
+router.post('/', protect, createPayment)
+router.get('/worker/:workerId', protect, getPaymentsByWorker)
+router.get('/worker/:workerId/summary', protect, getPaymentSummary)
 
 export default router
