@@ -1,4 +1,4 @@
-import { supabase } from '../config/supabaseClient.js'
+import Worker from '../models/Worker.js'
 
 // CREATE WORKER
 export const createWorker = async (req, res) => {
@@ -9,14 +9,9 @@ export const createWorker = async (req, res) => {
             return res.status(400).json({ message: 'Name and daily wage are required' })
         }
 
-        const { data, error } = await supabase
-            .from('workers')
-            .insert([{ name, phone, role, daily_wage }])
-            .select()
+        const worker = await Worker.create({ name, phone, role, daily_wage })
 
-        if (error) throw error
-
-        res.status(201).json(data[0])
+        res.status(201).json(worker)
     } catch (err) {
         res.status(500).json({ error: err.message })
     }
@@ -25,14 +20,9 @@ export const createWorker = async (req, res) => {
 // GET ALL WORKERS
 export const getWorkers = async (req, res) => {
     try {
-        const { data, error } = await supabase
-            .from('workers')
-            .select('*')
-            .order('created_at', { ascending: false })
+        const workers = await Worker.find().sort({ created_at: -1 })
 
-        if (error) throw error
-
-        res.json(data)
+        res.json(workers)
     } catch (err) {
         res.status(500).json({ error: err.message })
     }
@@ -43,15 +33,13 @@ export const getWorkerById = async (req, res) => {
     try {
         const { id } = req.params
 
-        const { data, error } = await supabase
-            .from('workers')
-            .select('*')
-            .eq('id', id)
-            .single()
+        const worker = await Worker.findById(id)
 
-        if (error) throw error
+        if (!worker) {
+            return res.status(404).json({ error: 'Worker not found' })
+        }
 
-        res.json(data)
+        res.json(worker)
     } catch (err) {
         res.status(404).json({ error: 'Worker not found' })
     }
@@ -62,12 +50,11 @@ export const deleteWorker = async (req, res) => {
     try {
         const { id } = req.params
 
-        const { error } = await supabase
-            .from('workers')
-            .delete()
-            .eq('id', id)
+        const worker = await Worker.findByIdAndDelete(id)
 
-        if (error) throw error
+        if (!worker) {
+            return res.status(404).json({ error: 'Worker not found' })
+        }
 
         res.json({ message: 'Worker deleted successfully' })
     } catch (err) {

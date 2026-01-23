@@ -1,6 +1,5 @@
-import { supabase } from '../config/supabaseClient.js'
+import Payment from '../models/Payment.js'
 
-// ADD PAYMENT
 export const createPayment = async (req, res) => {
     try {
         const { worker_id, amount, type, note, payment_date } = req.body
@@ -9,22 +8,15 @@ export const createPayment = async (req, res) => {
             return res.status(400).json({ message: 'worker_id, amount and type are required' })
         }
 
-        const { data, error } = await supabase
-            .from('payments')
-            .insert([
-                {
-                    worker_id,
-                    amount,
-                    type, // salary | extra
-                    note,
-                    payment_date
-                }
-            ])
-            .select()
+        const payment = await Payment.create({
+            worker_id,
+            amount,
+            type, // salary | extra
+            note,
+            payment_date
+        })
 
-        if (error) throw error
-
-        res.status(201).json(data[0])
+        res.status(201).json(payment)
     } catch (err) {
         res.status(500).json({ error: err.message })
     }
@@ -35,15 +27,10 @@ export const getPaymentsByWorker = async (req, res) => {
     try {
         const { workerId } = req.params
 
-        const { data, error } = await supabase
-            .from('payments')
-            .select('*')
-            .eq('worker_id', workerId)
-            .order('payment_date', { ascending: false })
+        const payments = await Payment.find({ worker_id: workerId })
+            .sort({ payment_date: -1 })
 
-        if (error) throw error
-
-        res.json(data)
+        res.json(payments)
     } catch (err) {
         res.status(500).json({ error: err.message })
     }
@@ -54,17 +41,12 @@ export const getPaymentSummary = async (req, res) => {
     try {
         const { workerId } = req.params
 
-        const { data, error } = await supabase
-            .from('payments')
-            .select('amount, type')
-            .eq('worker_id', workerId)
-
-        if (error) throw error
+        const payments = await Payment.find({ worker_id: workerId })
 
         let totalSalary = 0
         let totalExtra = 0
 
-        data.forEach(p => {
+        payments.forEach(p => {
             if (p.type === 'salary') totalSalary += Number(p.amount)
             if (p.type === 'extra') totalExtra += Number(p.amount)
         })
